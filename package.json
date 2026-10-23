@@ -37,14 +37,14 @@
   "author": "MapConductor",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@mapconductor/js-sdk-core": "^0.2.0",
+    "@mapconductor/js-sdk-core": "^0.2.1",
     "react": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
-    "@deck.gl/core": "^9.3.0",
-    "@deck.gl/geo-layers": "^9.3.0",
-    "@deck.gl/layers": "^9.3.0",
-    "@mapconductor/js-sdk-core": "^0.2.0",
+    "@deck.gl/core": "^9.4.0",
+    "@deck.gl/geo-layers": "^9.4.0",
+    "@deck.gl/layers": "^9.4.0",
+    "@mapconductor/js-sdk-core": "^0.2.1",
     "@mapconductor/js-sdk-react": "^0.2.1"
   },
   "devDependencies": {
