@@ -1,0 +1,55 @@
+{
+  "name": "@mapconductor/react-for-deckgl",
+  "version": "0.2.1",
+  "description": "deck.gl provider for MapConductor React SDK",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./state": {
+      "types": "./dist/state.d.ts",
+      "import": "./dist/state.mjs",
+      "require": "./dist/state.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/state.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts src/state.ts --format cjs,esm --watch",
+    "clean": "rm -rf dist",
+    "test": "echo 'No tests yet'"
+  },
+  "keywords": [
+    "maps",
+    "deck.gl",
+    "webgl",
+    "react",
+    "typescript"
+  ],
+  "author": "MapConductor",
+  "license": "Apache-2.0",
+  "peerDependencies": {
+    "@mapconductor/js-sdk-core": "^0.2.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@deck.gl/core": "^9.3.0",
+    "@deck.gl/geo-layers": "^9.3.0",
+    "@deck.gl/layers": "^9.3.0",
+    "@mapconductor/js-sdk-core": "^0.2.0",
+    "@mapconductor/js-sdk-react": "^0.2.1"
+  },
+  "devDependencies": {
+    "react": "^19.2.8",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
