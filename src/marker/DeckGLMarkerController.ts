@@ -7,7 +7,6 @@ import {
   MarkerTileRenderer,
   MarkerTilingOptions,
   RasterLayerSource,
-  Settings,
   createDefaultIcon,
   createRasterLayerState,
   type GeoPoint,
@@ -15,6 +14,8 @@ import {
   type MarkerState,
   type Offset,
   type RasterLayerState,
+  markerHitShape,
+  pickMarkerHit,
   preferMarkerHit,
   type MarkerHit,
 } from '@mapconductor/js-sdk-core';
@@ -123,57 +124,27 @@ export class DeckGLMarkerController extends AbstractMarkerController<DeckGLActua
   }
 
   /**
-   * 画面座標でアイコン矩形に当たった最前面のマーカー。矩形に入っていなければ、
-   * 許容量の内側で最も近いものを返す。Leaflet ドライバーの `findAtScreen` と同じ規則。
+   * 画面座標で、描かれたピン（ラベル込み、`markerHitShape`）に当たった最前面のマーカー。
+   * どれにも入っていなければ、許容量（マウスは 0、指は MARKER_HIT_RADIUS_TOUCH_PX）の
+   * 内側で最も近いもの。選び方はコアの `pickMarkerHit`（画面下にあるものほど手前で、
+   * IconLayer の描画順と同じ）。ビットマップの正方形全体を見ていた頃は、既定のピンの
+   * 左右の透明な部分や、さらに tapTolerance（48 px）以内の点まで当たっていた。
    */
   private findAtScreen(touch: Offset, tolerance: number): MarkerHit<MarkerEntity<DeckGLActualMarker>> | null {
     const holder = this.renderer.holder;
-    const tapTolerance = Settings.Default.tapTolerance;
-    let bestOnIcon: MarkerEntity<DeckGLActualMarker> | null = null;
-    let bestOnIconY = -Infinity;
-    let bestNear: MarkerEntity<DeckGLActualMarker> | null = null;
-    let bestNearDistSq = Infinity;
-    let bestNearY = 0;
-
-    for (const entity of this.markerManager.allEntities()) {
-      const actual = entity.marker;
-      if (!actual || !actual.visible) continue; // タイル方式は findNearest 側で扱う
-      const icon = actual.bitmapIcon ?? (entity.state.icon ?? createDefaultIcon()).toBitmapIcon();
-      const screen = holder.toScreenOffset(actual.position);
-      const dx = touch.x - screen.x;
-      const dy = touch.y - screen.y;
-      const left = -icon.anchor.x * icon.size.width;
-      const right = (1 - icon.anchor.x) * icon.size.width;
-      const top = -icon.anchor.y * icon.size.height;
-      const bottom = (1 - icon.anchor.y) * icon.size.height;
-      if (dx >= left && dx <= right && dy >= top && dy <= bottom) {
-        // 画面下にあるものほど手前。IconLayer の描画順と同じ規則にする。
-        if (screen.y > bestOnIconY) {
-          bestOnIconY = screen.y;
-          bestOnIcon = entity;
-        }
-      } else if (
-        dx >= left - tolerance && dx <= right + tolerance &&
-        dy >= top - tolerance && dy <= bottom + tolerance
-      ) {
-        const distSq = dx * dx + dy * dy;
-        if (distSq < bestNearDistSq) {
-          bestNearDistSq = distSq;
-          bestNear = entity;
-          bestNearY = screen.y;
-        }
-      } else if (
-        Math.abs(dx) <= tapTolerance && Math.abs(dy) <= tapTolerance &&
-        bestNear == null
-      ) {
-        bestNear = entity;
-        bestNearDistSq = dx * dx + dy * dy;
-        bestNearY = screen.y;
-      }
-    }
-    if (bestOnIcon) return { item: bestOnIcon, exact: true, anchorY: bestOnIconY, distance: 0 };
-    if (bestNear) return { item: bestNear, exact: false, anchorY: bestNearY, distance: Math.sqrt(bestNearDistSq) };
-    return null;
+    const visible = this.markerManager
+      .allEntities()
+      .filter(entity => entity.marker?.visible); // タイル方式は findHit 側で扱う
+    return pickMarkerHit(
+      touch,
+      visible,
+      entity => {
+        const actual = entity.marker!;
+        const icon = actual.bitmapIcon ?? (entity.state.icon ?? createDefaultIcon()).toBitmapIcon();
+        return { anchorScreen: holder.toScreenOffset(actual.position), ...markerHitShape(icon) };
+      },
+      tolerance,
+    );
   }
 
   // ── タイル方式 ─────────────────────────────────────────────────────────────
