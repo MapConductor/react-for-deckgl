@@ -245,8 +245,11 @@ declare class DeckGLMarkerController extends AbstractMarkerController<DeckGLActu
      */
     findWithZoom(position: GeoPoint | null, nativeZoom: number, pointerType: 'touch' | 'mouse'): MarkerEntity<DeckGLActualMarker> | null;
     /**
-     * 画面座標でアイコン矩形に当たった最前面のマーカー。矩形に入っていなければ、
-     * 許容量の内側で最も近いものを返す。Leaflet ドライバーの `findAtScreen` と同じ規則。
+     * 画面座標で、描かれたピン（ラベル込み、`markerHitShape`）に当たった最前面のマーカー。
+     * どれにも入っていなければ、許容量（マウスは 0、指は MARKER_HIT_RADIUS_TOUCH_PX）の
+     * 内側で最も近いもの。選び方はコアの `pickMarkerHit`（画面下にあるものほど手前で、
+     * IconLayer の描画順と同じ）。ビットマップの正方形全体を見ていた頃は、既定のピンの
+     * 左右の透明な部分や、さらに tapTolerance（48 px）以内の点まで当たっていた。
      */
     private findAtScreen;
     protected shouldTile(state: MarkerState, totalCount: number): boolean;
