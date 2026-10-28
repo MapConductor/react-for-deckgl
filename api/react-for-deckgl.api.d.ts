@@ -431,4 +431,5 @@ declare class DeckGLProvider extends MapProvider {
     destroy(): void;
 }
 
-export { type DeckGLConfig, type DeckGLControllerOptions, DeckGLMap, DeckGLMapDesignType, DeckGLMapView, DeckGLMapViewController, DeckGLMapViewHolder, type DeckGLMapViewProps, DeckGLMapViewStateInterface, DeckGLProvider, type DeckGLViewState };
+export { DeckGLMap, DeckGLMapDesignType, DeckGLMapView, DeckGLMapViewController, DeckGLMapViewHolder, DeckGLMapViewStateInterface, DeckGLProvider };
+export type { DeckGLConfig, DeckGLControllerOptions, DeckGLMapViewProps, DeckGLViewState };
