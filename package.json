@@ -1,6 +1,6 @@
 {
   "name": "@mapconductor/react-for-deckgl",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "deck.gl provider for MapConductor React SDK",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -37,15 +37,15 @@
   "author": "MapConductor",
   "license": "Apache-2.0",
   "peerDependencies": {
-    "@mapconductor/js-sdk-core": "^0.2.1",
+    "@mapconductor/js-sdk-core": "^0.3.0",
     "react": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
     "@deck.gl/core": "^9.4.1",
     "@deck.gl/geo-layers": "^9.4.1",
     "@deck.gl/layers": "^9.4.1",
-    "@mapconductor/js-sdk-core": "^0.2.1",
-    "@mapconductor/js-sdk-react": "^0.2.1"
+    "@mapconductor/js-sdk-core": "^0.3.0",
+    "@mapconductor/js-sdk-react": "^0.3.0"
   },
   "devDependencies": {
     "react": "^19.3.1",
