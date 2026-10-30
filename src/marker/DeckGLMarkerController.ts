@@ -17,8 +17,10 @@ import {
   markerHitShape,
   pickMarkerHit,
   preferMarkerHit,
+  tilePixelRatio,
   type MarkerHit,
 } from '@mapconductor/js-sdk-core';
+import { localTileUrlTemplate } from '../raster/localTileUrl';
 import { ZoomAltitudeConverter } from '../zoom/ZoomAltitudeConverter';
 import { DeckGLMarkerOverlayRenderer, type DeckGLActualMarker } from './DeckGLMarkerOverlayRenderer';
 
@@ -31,6 +33,8 @@ export class DeckGLMarkerController extends AbstractMarkerController<DeckGLActua
   private tileRenderer: MarkerTileRenderer<MarkerState> | null = null;
   private tileRouteId: string | null = null;
   private tileVersion = 0;
+  /** 現在のタイルを描いている倍率（CSS 1px あたりのデバイスピクセル数）。 */
+  private tilePixelRatio = 1;
   // 世代番号。syncTiledOverlay は await を挟むので、後から始まった同期が先に
   // 終わることがある。古い側が後から結果を書き戻さないための番兵。
   private tileGeneration = 0;
@@ -173,6 +177,9 @@ export class DeckGLMarkerController extends AbstractMarkerController<DeckGLActua
 
     this.tileRouteId ??= `mc-deckgl-tile-${generateId()}`;
     const server = LocalTileServer.startServer();
+    // タイルは CSS 256px で敷かれる。画面の倍率で描いておかないと、1x の画像が
+    // 引き伸ばされてピンやラベルがぼやける。
+    this.tilePixelRatio = tilePixelRatio();
     const renderer = new MarkerTileRenderer(
       tiledStates,
       256,
@@ -180,6 +187,7 @@ export class DeckGLMarkerController extends AbstractMarkerController<DeckGLActua
       1.0,
       false,
       this.tilingOptions.declutterPx,
+      this.tilePixelRatio,
     );
     this.tileRenderer = renderer;
     this.tileVersion++;
@@ -189,7 +197,12 @@ export class DeckGLMarkerController extends AbstractMarkerController<DeckGLActua
     // `LocalTileServer` から直接読む（DeckGLRasterLayer 参照）。Service Worker を
     // 経由する必要が無いので、アイコンだけ先に読み込んでおけばよい。
     await renderer.preloadIcons();
-    const template = `mc-local-tile://${this.tileRouteId}/256/${this.tileVersion}/{z}/{x}/{y}.png`;
+    const template = localTileUrlTemplate({
+      routeId: this.tileRouteId,
+      tileSize: 256,
+      cacheKey: String(this.tileVersion),
+      pixelRatio: this.tilePixelRatio,
+    });
 
     if (generation !== this.tileGeneration) return;
     await this.onRasterLayerUpdate?.(createRasterLayerState({
