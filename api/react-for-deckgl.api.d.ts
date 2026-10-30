@@ -226,6 +226,8 @@ declare class DeckGLMarkerController extends AbstractMarkerController<DeckGLActu
     private tileRenderer;
     private tileRouteId;
     private tileVersion;
+    /** 現在のタイルを描いている倍率（CSS 1px あたりのデバイスピクセル数）。 */
+    private tilePixelRatio;
     private tileGeneration;
     /** タイル方式マーカーの overlay 差し替え。ビューコントローラが繋ぐ。 */
     onRasterLayerUpdate: ((state: RasterLayerState | null) => Promise<void>) | null;

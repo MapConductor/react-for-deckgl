@@ -15,37 +15,9 @@ import { TileLayer } from '@deck.gl/geo-layers';
 import { DeckGLLayerOrder } from '../DeckGLMap';
 import { DeckGLMapViewHolder } from '../DeckGLMapViewHolder';
 import type { DeckGLLayerHandle } from '../vector/DeckGLVectorControllers';
+import { parseLocalTileTemplate, type LocalTileTemplate } from './localTileUrl';
 
 type TileImage = ImageBitmap | HTMLImageElement | null;
-
-interface LocalTileTemplate {
-  routeId: string;
-  tileSize: number;
-  /** Cache generation embedded in SDK-owned tile URLs. */
-  cacheKey: string | null;
-}
-
-/**
- * MapConductor 内製タイル（タイル方式マーカー）の URL を見分ける。
- *
- * Service Worker 経由の `/__tiles/<route>/<size>/...` と、SW が使えない環境向けの
- * `mc-local-tile://<route>/<size>/...` の 2 系統がある。どちらもネットワークには
- * 出ないので、deck.gl の既定のタイル取得ではなく `LocalTileServer` から直接読む。
- */
-function parseLocalTileTemplate(template: string): LocalTileTemplate | null {
-  if (template.startsWith('mc-local-tile://')) {
-    const url = new URL(template);
-    const parts = url.pathname.split('/').filter(Boolean);
-    const tileSize = Number(parts[0]);
-    return Number.isFinite(tileSize)
-      ? { routeId: url.hostname, tileSize, cacheKey: parts[1] ?? null }
-      : null;
-  }
-  const match = template.match(/^\/?__tiles\/([^/]+)\/(\d+)(?:\/([^/]+))?\//);
-  return match
-    ? { routeId: match[1], tileSize: Number(match[2]), cacheKey: match[3] ?? null }
-    : null;
-}
 
 async function toImage(bytes: ArrayBuffer | Uint8Array | null): Promise<TileImage> {
   if (!bytes) return null;
@@ -130,7 +102,9 @@ export class DeckGLRasterLayerRenderer {
           ? async ({ index, signal }) => {
             if (local) {
               const server = LocalTileServer.startServer();
-              const request = { x: index.x, y: index.y, z: index.z };
+              // A `@2x` image still fills its tile: BitmapLayer stretches the
+              // texture over the tile's bounds whatever its size.
+              const request = { x: index.x, y: index.y, z: index.z, pixelRatio: local.pixelRatio };
               const dataUrl = server.handleFetchDataUrl(local.routeId, request);
               if (dataUrl) return loadDataUrl(dataUrl);
               // Throws on a failed render, which deck.gl reports as a failed
