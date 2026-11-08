@@ -135,7 +135,12 @@ export class DeckGLRasterLayerRenderer {
           });
         },
       }),
-      DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
+      // Marker tiles are mounted as a raster but belong with the markers: over the shapes,
+      // just under the native marker layer. They used to sit in the raster band, under
+      // every polygon, circle and polyline.
+      state.id === 'mc-marker-tiles'
+        ? DeckGLLayerOrder.marker - 1
+        : DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
     );
     return handle;
   }
