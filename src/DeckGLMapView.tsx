@@ -13,11 +13,11 @@ import {
 import {
   useMapViewStyle,
   useCameraRestriction,
-  useMapUISettings,
+  useMapUISettings, usePolylineTilingOptions,
   useMarkerRenderingSupport,
 } from '@mapconductor/js-sdk-react/internal';
 import {
-  MarkerTilingOptions,
+  MarkerTilingOptions, PolylineTilingOptions,
   mapViewStateInternal,
   type GeoPoint,
   type GeoRectBounds,
@@ -43,6 +43,12 @@ export interface DeckGLMapViewProps extends MapViewBaseProps<DeckGLMapViewStateI
   onError?: (error: Error) => void;
   children?: ReactNode;
   markerTilingOptions?: MarkerTilingOptions;
+  /**
+   * When to draw polylines as raster tiles ({@link PolylineTilingOptions.Default} if omitted).
+   * Read when the map is created; a later value applies from the next time the polylines are
+   * handed to the map.
+   */
+  polylineTilingOptions?: PolylineTilingOptions;
 }
 
 export function DeckGLMapView({
@@ -65,6 +71,7 @@ export function DeckGLMapView({
   onError,
   children,
   markerTilingOptions,
+  polylineTilingOptions,
 }: DeckGLMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [provider] = useState(() => new DeckGLProvider());
@@ -113,6 +120,7 @@ export function DeckGLMapView({
       minZoom,
       restrictBounds,
       markerTilingOptions,
+      polylineTilingOptions,
       options,
     };
 
@@ -220,6 +228,7 @@ export function DeckGLMapView({
   ]);
 
   useMapUISettings(state, controller);
+  usePolylineTilingOptions(controller, polylineTilingOptions);
   // マップ生成時 config だけでなく、prop の変化にも追随させる（android-sdk 相当）。
   useCameraRestriction(controller, { cameraRestriction, restrictBounds, minZoom, maxZoom });
 
