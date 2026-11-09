@@ -10,6 +10,7 @@ import {
 } from '@deck.gl/core';
 import { createGeoPoint, type GeoPoint, type GeoPointInterface, type Offset } from '@mapconductor/js-sdk-core';
 import { nearestCopyLongitude } from './helpers';
+import { isMarkerGestureTap } from './marker/markerGestureTap';
 
 /**
  * レイヤーの重なり順。deck.gl は配列の**後ろほど手前**に描くので、
@@ -206,7 +207,15 @@ export class DeckGLMap {
         );
         this.onViewStateChanged?.(this.viewState, interacting);
       },
-      onClick: info => this.onClick?.(info),
+      onClick: (info, event) => {
+        // マーカーを掴んだジェスチャのタップは、コアの DefaultMarkerEventController が
+        // 1 回だけ配送する（clickable ならマーカーの onClick、clickable: false なら
+        // dispatchTap で下へ）。その pointerup には preventDefault() が付いている。
+        // mjolnir.js はブラウザの click ではなくポインタイベントからタップを認識する
+        // ので、ここで捨てないと同じタップが 2 回配送される。
+        if (isMarkerGestureTap(event)) return;
+        this.onClick?.(info);
+      },
       onLoad: () => onLoad?.(),
     });
 
