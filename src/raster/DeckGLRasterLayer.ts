@@ -9,6 +9,7 @@ import {
   type RasterLayerChangeParams,
   type RasterLayerEntity,
   type RasterLayerState,
+  POLYGON_TILE_LAYER_ID,
 } from '@mapconductor/js-sdk-core';
 import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer } from '@deck.gl/geo-layers';
@@ -137,10 +138,13 @@ export class DeckGLRasterLayerRenderer {
       }),
       // Marker tiles are mounted as a raster but belong with the markers: over the shapes,
       // just under the native marker layer. They used to sit in the raster band, under
-      // every polygon, circle and polyline.
+      // every polygon, circle and polyline. Polygon tiles belong with the polygons: under the
+      // natively drawn ones (polygon ± 9), over the ground images.
       state.id === 'mc-marker-tiles'
         ? DeckGLLayerOrder.marker - 1
-        : DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
+        : state.id === POLYGON_TILE_LAYER_ID
+          ? DeckGLLayerOrder.polygon - 10
+          : DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
     );
     return handle;
   }
