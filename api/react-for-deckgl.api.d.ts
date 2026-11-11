@@ -2,7 +2,7 @@ import { DeckGLMapViewStateInterface, DeckGLMapDesignType } from './state.js';
 export { DeckGLDesign, DeckGLDesignParams, DeckGLMapViewState, DeckGLMapViewStateParams, useDeckGLMapViewState } from './state.js';
 import * as react from 'react';
 import { CSSProperties, ReactNode } from 'react';
-import { Offset, GeoPointInterface, GeoPoint, MapViewBaseProps, GeoRectBounds, MarkerTilingOptions, PolylineTilingOptions, MapViewHolderBase, BitmapIcon, AbstractMarkerOverlayRenderer, AddParams, ChangeParams, MarkerEntity, AbstractMarkerController, RasterLayerState, MarkerState, CircleController, AbstractCircleOverlayRenderer, CircleState, CircleEntity, PolylineController, AbstractPolylineOverlayRenderer, PolylineState, PolylineEntity, PolygonController, AbstractPolygonOverlayRenderer, PolygonState, PolygonEntity, GroundImageController, AbstractGroundImageOverlayRenderer, GroundImageState, GroundImageEntity, RasterLayerController, RasterHeaderSupport, RasterLayerAddParams, RasterLayerChangeParams, RasterLayerEntity, MapCameraPosition, BaseMapViewController, MapViewControllerInterface, MarkerCapable, CircleCapable, PolylineCapable, PolygonCapable, GroundImageCapable, RasterLayerCapable, MapUISettings, CameraRestriction, OnMarkerEventHandler, MarkerAnimationOverlayHost, MapConfig, MapProvider } from '@mapconductor/js-sdk-core';
+import { Offset, GeoPointInterface, GeoPoint, MapViewBaseProps, GeoRectBounds, MarkerTilingOptions, PolylineTilingOptions, CircleTilingOptions, MapViewHolderBase, BitmapIcon, AbstractMarkerOverlayRenderer, AddParams, ChangeParams, MarkerEntity, AbstractMarkerController, RasterLayerState, MarkerState, CircleController, AbstractCircleOverlayRenderer, CircleState, CircleEntity, PolylineController, AbstractPolylineOverlayRenderer, PolylineState, PolylineEntity, PolygonController, AbstractPolygonOverlayRenderer, PolygonState, PolygonEntity, GroundImageController, AbstractGroundImageOverlayRenderer, GroundImageState, GroundImageEntity, RasterLayerController, RasterHeaderSupport, RasterLayerAddParams, RasterLayerChangeParams, RasterLayerEntity, MapCameraPosition, BaseMapViewController, MapViewControllerInterface, MarkerCapable, CircleCapable, PolylineCapable, PolygonCapable, GroundImageCapable, RasterLayerCapable, MapUISettings, CameraRestriction, OnMarkerEventHandler, MarkerAnimationOverlayHost, MapConfig, MapProvider } from '@mapconductor/js-sdk-core';
 import { LayersList, Layer, Deck, MapView, PickingInfo, WebMercatorViewport } from '@deck.gl/core';
 
 /** deck.gl のネイティブなカメラ表現。**ズームは 512px ワールド基準**（統一ズーム − 1）。 */
@@ -159,8 +159,14 @@ interface DeckGLMapViewProps extends MapViewBaseProps<DeckGLMapViewStateInterfac
      * handed to the map.
      */
     polylineTilingOptions?: PolylineTilingOptions;
+    /**
+     * When to draw circles as raster tiles ({@link CircleTilingOptions.Default} if omitted).
+     * Read when the map is created; a later value applies from the next time the circles are
+     * handed to the map.
+     */
+    circleTilingOptions?: CircleTilingOptions;
 }
-declare function DeckGLMapView({ state, mapStyle, onStyleDiagnostics, onMapLoaded, onMapClick, onMapLongClick, onCameraMoveStart, onCameraMove, onCameraMoveEnd, maxZoom, minZoom, restrictBounds, cameraRestriction, className, containerStyle, options, onError, children, markerTilingOptions, polylineTilingOptions, }: DeckGLMapViewProps): react.JSX.Element;
+declare function DeckGLMapView({ state, mapStyle, onStyleDiagnostics, onMapLoaded, onMapClick, onMapLongClick, onCameraMoveStart, onCameraMove, onCameraMoveEnd, maxZoom, minZoom, restrictBounds, cameraRestriction, className, containerStyle, options, onError, children, markerTilingOptions, polylineTilingOptions, circleTilingOptions, }: DeckGLMapViewProps): react.JSX.Element;
 
 /**
  * 投影の唯一の注入点。**投影をここ以外に書かないこと。**
@@ -437,6 +443,11 @@ interface DeckGLConfig extends MapConfig {
      * The controller's `setPolylineTilingOptions` replaces it later.
      */
     polylineTilingOptions?: PolylineTilingOptions;
+    /**
+     * When to draw circles as raster tiles; {@link CircleTilingOptions.Default} if omitted.
+     * The controller's `setCircleTilingOptions` replaces it later.
+     */
+    circleTilingOptions?: CircleTilingOptions;
     options?: Partial<DeckGLControllerOptions>;
 }
 declare class DeckGLProvider extends MapProvider {

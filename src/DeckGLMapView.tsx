@@ -13,11 +13,11 @@ import {
 import {
   useMapViewStyle,
   useCameraRestriction,
-  useMapUISettings, usePolylineTilingOptions,
+  useMapUISettings, usePolylineTilingOptions, useCircleTilingOptions,
   useMarkerRenderingSupport,
 } from '@mapconductor/js-sdk-react/internal';
 import {
-  MarkerTilingOptions, PolylineTilingOptions,
+  MarkerTilingOptions, PolylineTilingOptions, CircleTilingOptions,
   mapViewStateInternal,
   type GeoPoint,
   type GeoRectBounds,
@@ -49,6 +49,12 @@ export interface DeckGLMapViewProps extends MapViewBaseProps<DeckGLMapViewStateI
    * handed to the map.
    */
   polylineTilingOptions?: PolylineTilingOptions;
+  /**
+   * When to draw circles as raster tiles ({@link CircleTilingOptions.Default} if omitted).
+   * Read when the map is created; a later value applies from the next time the circles are
+   * handed to the map.
+   */
+  circleTilingOptions?: CircleTilingOptions;
 }
 
 export function DeckGLMapView({
@@ -72,6 +78,7 @@ export function DeckGLMapView({
   children,
   markerTilingOptions,
   polylineTilingOptions,
+  circleTilingOptions,
 }: DeckGLMapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [provider] = useState(() => new DeckGLProvider());
@@ -121,6 +128,7 @@ export function DeckGLMapView({
       restrictBounds,
       markerTilingOptions,
       polylineTilingOptions,
+      circleTilingOptions,
       options,
     };
 
@@ -229,6 +237,7 @@ export function DeckGLMapView({
 
   useMapUISettings(state, controller);
   usePolylineTilingOptions(controller, polylineTilingOptions);
+  useCircleTilingOptions(controller, circleTilingOptions);
   // マップ生成時 config だけでなく、prop の変化にも追随させる（android-sdk 相当）。
   useCameraRestriction(controller, { cameraRestriction, restrictBounds, minZoom, maxZoom });
 
