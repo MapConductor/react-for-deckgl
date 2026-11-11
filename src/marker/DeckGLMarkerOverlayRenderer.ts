@@ -1,5 +1,6 @@
 import {
   AbstractMarkerOverlayRenderer,
+  markerDrawOrder,
   type AddParams,
   type BitmapIcon,
   type ChangeParams,
@@ -127,9 +128,9 @@ export class DeckGLMarkerOverlayRenderer extends AbstractMarkerOverlayRenderer<
   private rebuild(): void {
     const data = this.allEntries()
       .filter(entry => entry.visible)
-      // deck.gl は配列の後ろほど手前に描く。zIndex が同じなら南にあるものを後に
-      // 置き、傾けた地図で手前のマーカーが奥のマーカーを隠すようにする。
-      .sort((a, b) => (a.zIndex - b.zIndex) || (b.position.latitude - a.position.latitude));
+      // deck.gl は配列の後ろほど手前に描く。全プロバイダ共通の順（zIndex、同じなら南、
+      // 緯度も同じなら西が手前）で並べ、傾けた地図で手前のマーカーが奥を隠すようにする。
+      .sort((a, b) => markerDrawOrder(a.zIndex, a.position) - markerDrawOrder(b.zIndex, b.position));
 
     this.holder.map.registry.set(
       DECKGL_MARKER_LAYER_ID,
