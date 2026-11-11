@@ -1,6 +1,6 @@
 import {
   AbstractMarkerOverlayRenderer,
-  markerDrawOrder,
+  MarkerDrawOrderView,
   type AddParams,
   type BitmapIcon,
   type ChangeParams,
@@ -43,6 +43,8 @@ export class DeckGLMarkerOverlayRenderer extends AbstractMarkerOverlayRenderer<
 
   private readonly entries = new Map<string, DeckGLActualMarker>();
   private redrawScheduled = false;
+  /** @internal */
+  private readonly drawOrder = new MarkerDrawOrderView();
 
   constructor(holder: DeckGLMapViewHolder) {
     super({ holder });
@@ -100,6 +102,16 @@ export class DeckGLMarkerOverlayRenderer extends AbstractMarkerOverlayRenderer<
     this.redraw();
   }
 
+  /**
+   * 地図が回ったら並べ直す。zIndex が同じなら回転後の画面で下のマーカーが手前。
+   * deck.gl のレイヤーは軽いので、回転に毎フレーム追従させる（0.5 度未満は無視）。
+   * @internal
+   */
+  followHeading(): void {
+    const { bearing, longitude } = this.holder.map.getViewState();
+    if (this.drawOrder.update(bearing, longitude)) this.redraw();
+  }
+
   /** 表示中（タイル化されていない）マーカーの行。当たり判定と傾き対応で読む。 */
   allEntries(): DeckGLActualMarker[] {
     return Array.from(this.entries.values());
@@ -128,9 +140,10 @@ export class DeckGLMarkerOverlayRenderer extends AbstractMarkerOverlayRenderer<
   private rebuild(): void {
     const data = this.allEntries()
       .filter(entry => entry.visible)
-      // deck.gl は配列の後ろほど手前に描く。全プロバイダ共通の順（zIndex、同じなら南、
-      // 緯度も同じなら西が手前）で並べ、傾けた地図で手前のマーカーが奥を隠すようにする。
-      .sort((a, b) => markerDrawOrder(a.zIndex, a.position) - markerDrawOrder(b.zIndex, b.position));
+      // deck.gl は配列の後ろほど手前に描く。全プロバイダ共通の順（zIndex、同じなら
+      // 回転後の画面で下、同じ行なら左が手前）で並べ、傾けた地図で手前のマーカーが奥を隠すようにする。
+      .sort((a, b) =>
+        this.drawOrder.order(a.zIndex, a.position) - this.drawOrder.order(b.zIndex, b.position));
 
     this.holder.map.registry.set(
       DECKGL_MARKER_LAYER_ID,
