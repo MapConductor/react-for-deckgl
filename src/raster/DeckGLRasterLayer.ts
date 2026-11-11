@@ -11,6 +11,7 @@ import {
   type RasterLayerState,
   POLYGON_TILE_LAYER_ID,
   POLYLINE_TILE_LAYER_ID,
+  CIRCLE_TILE_LAYER_ID,
 } from '@mapconductor/js-sdk-core';
 import { BitmapLayer } from '@deck.gl/layers';
 import { TileLayer } from '@deck.gl/geo-layers';
@@ -142,13 +143,16 @@ export class DeckGLRasterLayerRenderer {
       // every polygon, circle and polyline. Polygon tiles belong with the polygons: under the
       // natively drawn ones (polygon ± 9), over the ground images; polyline tiles with the
       // polylines, over the circles (circle ± 9) and under the native polylines (polyline ± 9).
+      // Circle tiles with the circles, over the native polygons and under the native circles.
       state.id === 'mc-marker-tiles'
         ? DeckGLLayerOrder.marker - 1
         : state.id === POLYGON_TILE_LAYER_ID
           ? DeckGLLayerOrder.polygon - 10
-          : state.id === POLYLINE_TILE_LAYER_ID
-            ? DeckGLLayerOrder.polyline - 10
-            : DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
+          : state.id === CIRCLE_TILE_LAYER_ID
+            ? DeckGLLayerOrder.circle - 10
+            : state.id === POLYLINE_TILE_LAYER_ID
+              ? DeckGLLayerOrder.polyline - 10
+              : DeckGLLayerOrder.rasterLayer + Math.max(-9, Math.min(9, state.zIndex)),
     );
     return handle;
   }
