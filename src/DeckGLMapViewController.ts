@@ -1,4 +1,4 @@
-import { PolygonTiler, POLYGON_TILE_LAYER_ID, polygonTileRasterLayerState, POLYLINE_TILE_LAYER_ID, polylineTileRasterLayerState, CIRCLE_TILE_LAYER_ID, circleTileRasterLayerState } from '@mapconductor/js-sdk-core';
+import { cameraFromPaddedCenter, cameraWithPaddedCenter, type MapPaddings, PolygonTiler, POLYGON_TILE_LAYER_ID, polygonTileRasterLayerState, POLYLINE_TILE_LAYER_ID, polylineTileRasterLayerState, CIRCLE_TILE_LAYER_ID, circleTileRasterLayerState } from '@mapconductor/js-sdk-core';
 import {
   BaseMapViewController,
   MapUISettingsDiagnostics,
@@ -75,6 +75,11 @@ export class DeckGLMapViewController
    * （{@link toMapCameraPosition} 参照）。
    */
   private logicalTiltHint: number | null;
+  /**
+   * 最後に動かしたときの `MapCameraPosition.paddings`。deck.gl の MapView に
+   * カメラのパディングは無いので、カメラの中心をずらして再現し、読み戻しで戻す。
+   */
+  private cameraPaddings: MapPaddings | null = null;
 
   constructor(
     readonly holder: DeckGLMapViewHolder,
@@ -220,14 +225,30 @@ export class DeckGLMapViewController
    */
   getCameraPosition(): MapCameraPosition {
     const viewState = this.map.getViewState();
-    return toMapCameraPosition({
+    const camera = toMapCameraPosition({
       longitude: viewState.longitude,
       latitude: viewState.latitude,
       zoom: viewState.zoom,
       bearing: viewState.bearing,
       pitch: viewState.pitch,
       logicalTiltHint: this.logicalTiltHint,
-    }).copy({ visibleRegion: this.getVisibleRegion() });
+    });
+    return cameraFromPaddedCenter(camera, this.cameraPaddings, this.verticalFov(), this.map.getSize())
+      .copy({ visibleRegion: this.getVisibleRegion() });
+  }
+
+  /** WebMercatorViewport の上下視野角（度）。 */
+  private verticalFov(): number {
+    return this.map.viewport.fovy;
+  }
+
+  /** パディングを除いた領域の中央に target が来るよう、送るカメラの中心をずらす。 */
+  private withPaddedCenter(position: MapCameraPosition): MapCameraPosition {
+    const paddings = position.paddings ?? this.cameraPaddings;
+    this.cameraPaddings = paddings;
+    // toDeckViewState は zoom を整数に丸めて送るので、ずらす量も丸めた zoom で測る。
+    const zoom = position.tilt >= 0 ? Math.round(position.zoom) : position.zoom;
+    return cameraWithPaddedCenter(position.copy({ paddings }), this.verticalFov(), this.map.getSize(), zoom);
   }
 
   /** レイアウト前（幅か高さが 0）は null。他プロバイダと同じ契約。 */
@@ -237,13 +258,13 @@ export class DeckGLMapViewController
 
   async moveCamera(position: MapCameraPosition): Promise<boolean> {
     this.logicalTiltHint = position.tilt;
-    this.map.setViewState(toDeckViewState(position));
+    this.map.setViewState(toDeckViewState(this.withPaddedCenter(position)));
     return true;
   }
 
   async animateCamera(position: MapCameraPosition, durationMillis: number): Promise<boolean> {
     this.logicalTiltHint = position.tilt;
-    this.map.setViewState(toDeckViewState(position), {
+    this.map.setViewState(toDeckViewState(this.withPaddedCenter(position)), {
       durationMillis: durationMillis > 0 ? durationMillis : 500,
     });
     return true;
