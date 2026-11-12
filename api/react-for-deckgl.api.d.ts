@@ -388,6 +388,11 @@ declare class DeckGLMapViewController extends BaseMapViewController implements M
      * （{@link toMapCameraPosition} 参照）。
      */
     private logicalTiltHint;
+    /**
+     * 最後に動かしたときの `MapCameraPosition.paddings`。deck.gl の MapView に
+     * カメラのパディングは無いので、カメラの中心をずらして再現し、読み戻しで戻す。
+     */
+    private cameraPaddings;
     constructor(holder: DeckGLMapViewHolder, markerController: DeckGLMarkerController, circleController: DeckGLCircleController, polylineController: DeckGLPolylineController, polygonController: DeckGLPolygonController, groundImageController: DeckGLGroundImageController, rasterLayerController: DeckGLRasterLayerController, initialTilt?: number | null);
     getMap(): DeckGLMap;
     private installListeners;
@@ -403,6 +408,10 @@ declare class DeckGLMapViewController extends BaseMapViewController implements M
      * 表面化する。変換はどちらも {@link toMapCameraPosition} が持つ。
      */
     getCameraPosition(): MapCameraPosition;
+    /** WebMercatorViewport の上下視野角（度）。 */
+    private verticalFov;
+    /** パディングを除いた領域の中央に target が来るよう、送るカメラの中心をずらす。 */
+    private withPaddedCenter;
     /** レイアウト前（幅か高さが 0）は null。他プロバイダと同じ契約。 */
     private getVisibleRegion;
     moveCamera(position: MapCameraPosition): Promise<boolean>;
