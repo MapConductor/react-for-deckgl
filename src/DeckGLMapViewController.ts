@@ -286,6 +286,9 @@ export class DeckGLMapViewController
       ],
       { padding: safePadding },
     );
+    // A fit frames the bounds in the whole viewport: the paddings of the last
+    // move no longer apply, so the read-back must not shift the fitted center.
+    this.cameraPaddings = null;
     this.map.setViewState({
       longitude: fitted.longitude,
       latitude: fitted.latitude,
