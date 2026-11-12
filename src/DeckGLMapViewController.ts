@@ -141,6 +141,7 @@ export class DeckGLMapViewController
 
   private installListeners(): void {
     this.map.onViewStateChanged = (_viewState, interacting) => {
+      this.markerController.renderer.followHeading();
       const camera = this.getCameraPosition();
       if (!this.moving) {
         this.moving = true;
@@ -259,6 +260,8 @@ export class DeckGLMapViewController
   async moveCamera(position: MapCameraPosition): Promise<boolean> {
     this.logicalTiltHint = position.tilt;
     this.map.setViewState(toDeckViewState(this.withPaddedCenter(position)));
+    // 即時の setViewState は onViewStateChange を通らない。
+    this.markerController.renderer.followHeading();
     return true;
   }
 
