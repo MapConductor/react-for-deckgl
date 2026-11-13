@@ -2,7 +2,7 @@ import { DeckGLMapViewStateInterface, DeckGLMapDesignType } from './state.js';
 export { DeckGLDesign, DeckGLDesignParams, DeckGLMapViewState, DeckGLMapViewStateParams, useDeckGLMapViewState } from './state.js';
 import * as react from 'react';
 import { CSSProperties, ReactNode } from 'react';
-import { Offset, GeoPointInterface, GeoPoint, MapViewBaseProps, GeoRectBounds, MarkerTilingOptions, MapViewHolderBase, BitmapIcon, AbstractMarkerOverlayRenderer, AddParams, ChangeParams, MarkerEntity, AbstractMarkerController, RasterLayerState, MarkerState, CircleController, AbstractCircleOverlayRenderer, CircleState, CircleEntity, PolylineController, AbstractPolylineOverlayRenderer, PolylineState, PolylineEntity, PolygonController, AbstractPolygonOverlayRenderer, PolygonState, PolygonEntity, GroundImageController, AbstractGroundImageOverlayRenderer, GroundImageState, GroundImageEntity, RasterLayerController, RasterHeaderSupport, RasterLayerAddParams, RasterLayerChangeParams, RasterLayerEntity, MapCameraPosition, BaseMapViewController, MapViewControllerInterface, MarkerCapable, CircleCapable, PolylineCapable, PolygonCapable, GroundImageCapable, RasterLayerCapable, MapUISettings, CameraRestriction, OnMarkerEventHandler, MarkerAnimationOverlayHost, MapConfig, MapProvider } from '@mapconductor/js-sdk-core';
+import { Offset, GeoPointInterface, GeoPoint, MapViewBaseProps, GeoRectBounds, MarkerTilingOptions, PolylineTilingOptions, CircleTilingOptions, MapViewHolderBase, BitmapIcon, AbstractMarkerOverlayRenderer, AddParams, ChangeParams, MarkerEntity, AbstractMarkerController, RasterLayerState, MarkerState, CircleController, AbstractCircleOverlayRenderer, CircleState, CircleEntity, PolylineController, AbstractPolylineOverlayRenderer, PolylineState, PolylineEntity, PolygonController, AbstractPolygonOverlayRenderer, PolygonState, PolygonEntity, GroundImageController, AbstractGroundImageOverlayRenderer, GroundImageState, GroundImageEntity, RasterLayerController, RasterHeaderSupport, RasterLayerAddParams, RasterLayerChangeParams, RasterLayerEntity, MapCameraPosition, BaseMapViewController, MapViewControllerInterface, MarkerCapable, CircleCapable, PolylineCapable, PolygonCapable, GroundImageCapable, RasterLayerCapable, MapUISettings, CameraRestriction, OnMarkerEventHandler, MarkerAnimationOverlayHost, MapConfig, MapProvider } from '@mapconductor/js-sdk-core';
 import { LayersList, Layer, Deck, MapView, PickingInfo, WebMercatorViewport } from '@deck.gl/core';
 
 /** deck.gl のネイティブなカメラ表現。**ズームは 512px ワールド基準**（統一ズーム − 1）。 */
@@ -153,8 +153,20 @@ interface DeckGLMapViewProps extends MapViewBaseProps<DeckGLMapViewStateInterfac
     onError?: (error: Error) => void;
     children?: ReactNode;
     markerTilingOptions?: MarkerTilingOptions;
+    /**
+     * When to draw polylines as raster tiles ({@link PolylineTilingOptions.Default} if omitted).
+     * Read when the map is created; a later value applies from the next time the polylines are
+     * handed to the map.
+     */
+    polylineTilingOptions?: PolylineTilingOptions;
+    /**
+     * When to draw circles as raster tiles ({@link CircleTilingOptions.Default} if omitted).
+     * Read when the map is created; a later value applies from the next time the circles are
+     * handed to the map.
+     */
+    circleTilingOptions?: CircleTilingOptions;
 }
-declare function DeckGLMapView({ state, mapStyle, onStyleDiagnostics, onMapLoaded, onMapClick, onMapLongClick, onCameraMoveStart, onCameraMove, onCameraMoveEnd, maxZoom, minZoom, restrictBounds, cameraRestriction, className, containerStyle, options, onError, children, markerTilingOptions, }: DeckGLMapViewProps): react.JSX.Element;
+declare function DeckGLMapView({ state, mapStyle, onStyleDiagnostics, onMapLoaded, onMapClick, onMapLongClick, onCameraMoveStart, onCameraMove, onCameraMoveEnd, maxZoom, minZoom, restrictBounds, cameraRestriction, className, containerStyle, options, onError, children, markerTilingOptions, polylineTilingOptions, circleTilingOptions, }: DeckGLMapViewProps): react.JSX.Element;
 
 /**
  * 投影の唯一の注入点。**投影をここ以外に書かないこと。**
@@ -376,6 +388,11 @@ declare class DeckGLMapViewController extends BaseMapViewController implements M
      * （{@link toMapCameraPosition} 参照）。
      */
     private logicalTiltHint;
+    /**
+     * 最後に動かしたときの `MapCameraPosition.paddings`。deck.gl の MapView に
+     * カメラのパディングは無いので、カメラの中心をずらして再現し、読み戻しで戻す。
+     */
+    private cameraPaddings;
     constructor(holder: DeckGLMapViewHolder, markerController: DeckGLMarkerController, circleController: DeckGLCircleController, polylineController: DeckGLPolylineController, polygonController: DeckGLPolygonController, groundImageController: DeckGLGroundImageController, rasterLayerController: DeckGLRasterLayerController, initialTilt?: number | null);
     getMap(): DeckGLMap;
     private installListeners;
@@ -391,6 +408,10 @@ declare class DeckGLMapViewController extends BaseMapViewController implements M
      * 表面化する。変換はどちらも {@link toMapCameraPosition} が持つ。
      */
     getCameraPosition(): MapCameraPosition;
+    /** WebMercatorViewport の上下視野角（度）。 */
+    private verticalFov;
+    /** パディングを除いた領域の中央に target が来るよう、送るカメラの中心をずらす。 */
+    private withPaddedCenter;
     /** レイアウト前（幅か高さが 0）は null。他プロバイダと同じ契約。 */
     private getVisibleRegion;
     moveCamera(position: MapCameraPosition): Promise<boolean>;
@@ -426,6 +447,16 @@ interface DeckGLConfig extends MapConfig {
     /** Restricts panning/zooming so the viewport cannot leave this rectangle. */
     restrictBounds?: GeoRectBounds;
     markerTilingOptions?: MarkerTilingOptions;
+    /**
+     * When to draw polylines as raster tiles; {@link PolylineTilingOptions.Default} if omitted.
+     * The controller's `setPolylineTilingOptions` replaces it later.
+     */
+    polylineTilingOptions?: PolylineTilingOptions;
+    /**
+     * When to draw circles as raster tiles; {@link CircleTilingOptions.Default} if omitted.
+     * The controller's `setCircleTilingOptions` replaces it later.
+     */
+    circleTilingOptions?: CircleTilingOptions;
     options?: Partial<DeckGLControllerOptions>;
 }
 declare class DeckGLProvider extends MapProvider {
